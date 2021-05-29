@@ -8,30 +8,40 @@ mkdir -p "$OUT_DIR"
 for layout in '4x5' '4x6' '5x6' '6x6'; do
     { echo "generating layout ${layout} ============="; } 2>/dev/null
 
+    git diff --quiet --exit-code src/dactyl_keyboard/dactyl.clj \
+        || git restore src/dactyl_keyboard/dactyl.clj
+
     # we do not need to patch since the repo stores the design for 4x5
     if { [ "$layout" != "4x5" ]; } 2>/dev/null; then
-        patch -p1 < "${layout}.patch" -u
+        patch -u -p1 -i "${layout}.patch"
     fi
 
     # generate the scad files
     lein run src/dactyl_keyboard/dactyl.clj
 
     LAYOUT_DIR="$OUT_DIR/$layout"
+    SCAD_DIR="$OUT_DIR/$layout/scads"
     mkdir "$LAYOUT_DIR"
+    mkdir "$SCAD_DIR"
 
-    cp "$OUT_DIR/right.scad" "$LAYOUT_DIR/right-${layout}.scad"
-    cp "$OUT_DIR/left.scad" "$LAYOUT_DIR/left-${layout}.scad"
-    cp "$OUT_DIR/right-plate.scad" "$LAYOUT_DIR/right-${layout}-plate.scad"
+    mv "$OUT_DIR/right.scad" "$SCAD_DIR/right-${layout}.scad"
+    mv "$OUT_DIR/left.scad" "$SCAD_DIR/left-${layout}.scad"
+    mv "$OUT_DIR/right-plate.scad" "$SCAD_DIR/right-${layout}-plate.scad"
 
     # run openscad in parallel
-    openscad -o "$LAYOUT_DIR/right-${layout}-plate.dxf" "$LAYOUT_DIR/right-${layout}-plate.scad" >/dev/null 2>&1 &
-    openscad -o "$LAYOUT_DIR/right-${layout}.stl" "$LAYOUT_DIR/right-${layout}.scad" >/dev/null 2>&1 &
-    openscad -o "$LAYOUT_DIR/left-${layout}.stl" "$LAYOUT_DIR/left-${layout}.scad" >/dev/null 2>&1 &
-    { wait; } 2>/dev/null
+    openscad -o "$LAYOUT_DIR/right-${layout}-plate.dxf" "$SCAD_DIR/right-${layout}-plate.scad" &
+    os_pid_1=$!
+    openscad -o "$LAYOUT_DIR/right-${layout}.stl" "$SCAD_DIR/right-${layout}.scad" &
+    os_pid_2=$!
+    openscad1 -o "$LAYOUT_DIR/left-${layout}.stl" "$SCAD_DIR/left-${layout}.scad" &
+    os_pid_3=$!
+    # wait "$os_pid_1" "$os_pid_2" "$os_pid_3"
+    wait "$os_pid_1" || echo '1 failed'
+    wait "$os_pid_2" || echo '2 failed'
+    wait "$os_pid_3" || echo '3 failed'
 
     # restore if patched
     if { [ "$layout" != "4x5" ]; } 2>/dev/null; then
         git restore src/dactyl_keyboard/dactyl.clj
     fi
 done
-rm "$OUT_DIR/"*.scad
