@@ -1,5 +1,3 @@
-diff --git a/src/dactyl_keyboard/dactyl.clj b/src/dactyl_keyboard/dactyl.clj
-index d8861fb..e58302f 100644
 --- a/src/dactyl_keyboard/dactyl.clj
 +++ b/src/dactyl_keyboard/dactyl.clj
 @@ -13,13 +13,13 @@
