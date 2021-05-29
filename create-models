@@ -33,7 +33,7 @@ for layout in '4x5' '4x6' '5x6' '6x6'; do
     os_pid_1=$!
     openscad -o "$LAYOUT_DIR/right-${layout}.stl" "$SCAD_DIR/right-${layout}.scad" &
     os_pid_2=$!
-    openscad1 -o "$LAYOUT_DIR/left-${layout}.stl" "$SCAD_DIR/left-${layout}.scad" &
+    openscad -o "$LAYOUT_DIR/left-${layout}.stl" "$SCAD_DIR/left-${layout}.scad" &
     os_pid_3=$!
     # wait "$os_pid_1" "$os_pid_2" "$os_pid_3"
     wait "$os_pid_1" || echo '1 failed'
